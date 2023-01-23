@@ -916,7 +916,10 @@ static irqreturn_t fotg210_irq(int irq, void *_fotg210)
 		if (int_grp2 & DISGR2_USBRST_INT) {
 			usb_gadget_udc_reset(&fotg210->gadget,
 					     fotg210->driver);
-			fotg210_ack_int(fotg210, FOTG210_DISGR2, DISGR2_USBRST_INT);
+			value = ioread32(reg);
+			//value &= ~DISGR2_USBRST_INT;
+			iowrite32(value, reg);
+			iowrite32(0x0, fotg210->reg + FOTG210_FIFOCF);
 			pr_info("fotg210 udc reset\n");
 		}
 		if (int_grp2 & DISGR2_SUSP_INT) {
