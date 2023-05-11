@@ -119,10 +119,7 @@
 		sdhci0: sdhci@20060000 {
 			compatible = "bflb,bl808-sdhci";
 			reg = <0x20060000 0x100>;
-			interrupts-extended = <&ipclic BFLB_IPC_SOURCE_M0
-						       BFLB_IPC_DEVICE_SDHCI
-						       IRQ_TYPE_EDGE_RISING>;
-			mboxes = <&ipclic BFLB_IPC_SOURCE_M0 BFLB_IPC_DEVICE_SDHCI>;
+			interrupts-extended = <&m0ic 17>;
 			clocks = <&sdh>;
 			status = "disabled";
 		};
@@ -168,7 +165,16 @@
 			interrupt-controller;
 			#address-cells = <0>;
 			#interrupt-cells = <2>;
-			riscv,ndev = <64>;
+			riscv,ndev = <82>;
+		};
+
+		m0ic: m0-interrupt-controller@20000050 {
+			compatible = "bflb,m0ic";
+			reg = <0x20000050 0x18>;
+			interrupts = <81 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-controller;
+			#address-cells = <0>;
+			#interrupt-cells = <1>;
 		};
 
 		clint: timer@e4000000 {
