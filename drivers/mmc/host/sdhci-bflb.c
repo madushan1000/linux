@@ -39,15 +39,10 @@ static u32 sdhci_bflb_readl(struct sdhci_host *host, int reg)
 	return ret;
 }
 
-void sdhci_bflb_set_clock(struct sdhci_host *host, unsigned int clock)
-{
-	sdhci_set_clock(host, host->max_clk);
-}
-
 static const struct sdhci_ops sdhci_bflb_ops = {
 	.read_w	= sdhci_bflb_readw,
 	.read_l	= sdhci_bflb_readl,
-	.set_clock = sdhci_bflb_set_clock,
+	.set_clock = sdhci_set_clock,
 	.get_max_clock = sdhci_pltfm_clk_get_max_clock,
 	.get_timeout_clock = sdhci_pltfm_clk_get_max_clock,
 	.set_bus_width = sdhci_set_bus_width,
