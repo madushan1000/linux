@@ -36,6 +36,17 @@
 #define FOTG210_DTR		0x108
 #define DTR_TST_CLRFF		(1 << 0)
 
+/* SOF Frame Number Register(0x10c) */
+#define FOTG210_SOFFNR		0x10C
+#define SOFFNR_UFN(x)       (((x) >> 11) & 0x7) /* SOF Micro-Frame Number */
+#define SOFFNR_FNR(x)       ((x) & 0x7ff) /* SOF Frame Number */
+
+/* SOF Mask Timer Register(0x110) */
+#define FOTG210_SOFMTR		0x110
+#define SOFMTR_TMR(x)       ((x) & 0xffff)
+
+
+
 /* PHY Test Mode Selector register(0x114) */
 #define FOTG210_PHYTMSR		0x114
 #define PHYTMSR_TST_PKT		(1 << 4)
@@ -88,6 +99,8 @@
 
 /* Device Mask of Interrupt Source Group 2 Register (0x13C) */
 #define FOTG210_DMISGR2		0x13C
+#define DMISGR2_MDEV_WAKEUP_VBUS	(1 << 10)
+#define DMISGR2_MDEV_IDLE	(1 << 9)
 #define DMISGR2_MDMA_ERROR	(1 << 8)
 #define DMISGR2_MDMA_CMPLT	(1 << 7)
 
@@ -162,6 +175,8 @@
 #define EPMAP_FIFONOMSK(ep, dir)	\
 	((3 << ((ep) - 1) * 8) << ((dir) ? 0 : 4))
 
+#define FOTG210_EPMAP2		0x1A4
+
 /* Device FIFO Map Register (0x1A8) */
 #define FOTG210_FIFOMAP		0x1A8
 #define FIFOMAP_DIROUT(fifo)	(0x0 << 4 << (fifo) * 8)
@@ -198,8 +213,10 @@
 
 /* Device DMA Controller Parameter setting 1 Register (0x1C8) */
 #define FOTG210_DMACPSR1	0x1C8
-#define DMACPSR1_DMA_LEN(len)	(((len) & 0xFFFF) << 8)
+#define DMACPSR1_DMA_LEN(len)	(((len) & 0x1FFFF) << 8)
+#define DMACPSR1_DMA_CLRFF  (1 << 4) /* Clear FIFO upon DMA abort */
 #define DMACPSR1_DMA_ABORT	(1 << 3)
+#define DMACPSR1_DMA_IO2IO  (1 << 2) /* IO to IO */
 #define DMACPSR1_DMA_TYPE(dir_in)	(((dir_in) ? 1 : 0) << 1)
 #define DMACPSR1_DMA_START	(1 << 0)
 

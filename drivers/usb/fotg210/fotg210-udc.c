@@ -48,7 +48,7 @@ static void fotg210_disable_fifo_int(struct fotg210_ep *ep)
 	iowrite32(value, ep->fotg210->reg + FOTG210_DMISGR1);
 }
 
-static void fotg210_enable_fifo_int(struct fotg210_ep *ep)
+static noinline void fotg210_enable_fifo_int(struct fotg210_ep *ep)
 {
 	u32 value = ioread32(ep->fotg210->reg + FOTG210_DMISGR1);
 
@@ -59,7 +59,7 @@ static void fotg210_enable_fifo_int(struct fotg210_ep *ep)
 	iowrite32(value, ep->fotg210->reg + FOTG210_DMISGR1);
 }
 
-static void fotg210_set_cxdone(struct fotg210_udc *fotg210)
+static noinline void fotg210_set_cxdone(struct fotg210_udc *fotg210)
 {
 	u32 value = ioread32(fotg210->reg + FOTG210_DCFESR);
 
@@ -67,7 +67,7 @@ static void fotg210_set_cxdone(struct fotg210_udc *fotg210)
 	iowrite32(value, fotg210->reg + FOTG210_DCFESR);
 }
 
-static void fotg210_done(struct fotg210_ep *ep, struct fotg210_request *req,
+static noinline void fotg210_done(struct fotg210_ep *ep, struct fotg210_request *req,
 			int status)
 {
 	list_del_init(&req->queue);
@@ -83,14 +83,15 @@ static void fotg210_done(struct fotg210_ep *ep, struct fotg210_request *req,
 	spin_lock(&ep->fotg210->lock);
 
 	if (ep->epnum) {
-		if (list_empty(&ep->queue))
+		if (list_empty(&ep->queue)) {
 			fotg210_disable_fifo_int(ep);
+		}
 	} else {
 		fotg210_set_cxdone(ep->fotg210);
 	}
 }
 
-static void fotg210_fifo_ep_mapping(struct fotg210_ep *ep, u32 epnum,
+static noinline void fotg210_fifo_ep_mapping(struct fotg210_ep *ep, u32 epnum,
 				u32 dir_in)
 {
 	struct fotg210_udc *fotg210 = ep->fotg210;
@@ -118,7 +119,7 @@ static void fotg210_fifo_ep_mapping(struct fotg210_ep *ep, u32 epnum,
 	iowrite32(val, fotg210->reg + FOTG210_FIFOCF);
 }
 
-static void fotg210_set_fifo_dir(struct fotg210_ep *ep, u32 epnum, u32 dir_in)
+static noinline void fotg210_set_fifo_dir(struct fotg210_ep *ep, u32 epnum, u32 dir_in)
 {
 	struct fotg210_udc *fotg210 = ep->fotg210;
 	u32 val;
@@ -128,7 +129,7 @@ static void fotg210_set_fifo_dir(struct fotg210_ep *ep, u32 epnum, u32 dir_in)
 	iowrite32(val, fotg210->reg + FOTG210_FIFOMAP);
 }
 
-static void fotg210_set_tfrtype(struct fotg210_ep *ep, u32 epnum, u32 type)
+static noinline void fotg210_set_tfrtype(struct fotg210_ep *ep, u32 epnum, u32 type)
 {
 	struct fotg210_udc *fotg210 = ep->fotg210;
 	u32 val;
@@ -138,7 +139,7 @@ static void fotg210_set_tfrtype(struct fotg210_ep *ep, u32 epnum, u32 type)
 	iowrite32(val, fotg210->reg + FOTG210_FIFOCF);
 }
 
-static void fotg210_set_mps(struct fotg210_ep *ep, u32 epnum, u32 mps,
+static noinline void fotg210_set_mps(struct fotg210_ep *ep, u32 epnum, u32 mps,
 				u32 dir_in)
 {
 	struct fotg210_udc *fotg210 = ep->fotg210;
@@ -151,7 +152,7 @@ static void fotg210_set_mps(struct fotg210_ep *ep, u32 epnum, u32 mps,
 	iowrite32(val, fotg210->reg + offset);
 }
 
-static int fotg210_config_ep(struct fotg210_ep *ep,
+static noinline int fotg210_config_ep(struct fotg210_ep *ep,
 		     const struct usb_endpoint_descriptor *desc)
 {
 	struct fotg210_udc *fotg210 = ep->fotg210;
@@ -166,7 +167,7 @@ static int fotg210_config_ep(struct fotg210_ep *ep,
 	return 0;
 }
 
-static int fotg210_ep_enable(struct usb_ep *_ep,
+static noinline int fotg210_ep_enable(struct usb_ep *_ep,
 			  const struct usb_endpoint_descriptor *desc)
 {
 	struct fotg210_ep *ep;
@@ -182,7 +183,7 @@ static int fotg210_ep_enable(struct usb_ep *_ep,
 	return fotg210_config_ep(ep, desc);
 }
 
-static void fotg210_reset_tseq(struct fotg210_udc *fotg210, u8 epnum)
+static noinline void fotg210_reset_tseq(struct fotg210_udc *fotg210, u8 epnum)
 {
 	struct fotg210_ep *ep = fotg210->ep[epnum];
 	u32 value;
@@ -205,7 +206,7 @@ static void fotg210_reset_tseq(struct fotg210_udc *fotg210, u8 epnum)
 	iowrite32(value, reg);
 }
 
-static int fotg210_ep_release(struct fotg210_ep *ep)
+static noinline int fotg210_ep_release(struct fotg210_ep *ep)
 {
 	if (!ep->epnum)
 		return 0;
@@ -218,7 +219,7 @@ static int fotg210_ep_release(struct fotg210_ep *ep)
 	return 0;
 }
 
-static int fotg210_ep_disable(struct usb_ep *_ep)
+static noinline int fotg210_ep_disable(struct usb_ep *_ep)
 {
 	struct fotg210_ep *ep;
 	struct fotg210_request *req;
@@ -253,7 +254,7 @@ static struct usb_request *fotg210_ep_alloc_request(struct usb_ep *_ep,
 	return &req->req;
 }
 
-static void fotg210_ep_free_request(struct usb_ep *_ep,
+static noinline void fotg210_ep_free_request(struct usb_ep *_ep,
 					struct usb_request *_req)
 {
 	struct fotg210_request *req;
@@ -262,7 +263,7 @@ static void fotg210_ep_free_request(struct usb_ep *_ep,
 	kfree(req);
 }
 
-static void fotg210_enable_dma(struct fotg210_ep *ep,
+static noinline void fotg210_enable_dma(struct fotg210_ep *ep,
 			      dma_addr_t d, u32 len)
 {
 	u32 value;
@@ -270,7 +271,7 @@ static void fotg210_enable_dma(struct fotg210_ep *ep,
 
 	/* set transfer length and direction */
 	value = ioread32(fotg210->reg + FOTG210_DMACPSR1);
-	value &= ~(DMACPSR1_DMA_LEN(0xFFFF) | DMACPSR1_DMA_TYPE(1));
+	value &= ~(DMACPSR1_DMA_LEN(0x1FFFF) | DMACPSR1_DMA_TYPE(1));
 	value |= DMACPSR1_DMA_LEN(len) | DMACPSR1_DMA_TYPE(ep->dir_in);
 	iowrite32(value, fotg210->reg + FOTG210_DMACPSR1);
 
@@ -287,7 +288,7 @@ static void fotg210_enable_dma(struct fotg210_ep *ep,
 
 	/* enable MDMA_EROR and MDMA_CMPLT interrupt */
 	value = ioread32(fotg210->reg + FOTG210_DMISGR2);
-	value &= ~(DMISGR2_MDMA_CMPLT | DMISGR2_MDMA_ERROR);
+	value &= ~(DMISGR2_MDMA_ERROR);
 	iowrite32(value, fotg210->reg + FOTG210_DMISGR2);
 
 	/* start DMA */
@@ -296,12 +297,12 @@ static void fotg210_enable_dma(struct fotg210_ep *ep,
 	iowrite32(value, fotg210->reg + FOTG210_DMACPSR1);
 }
 
-static void fotg210_disable_dma(struct fotg210_ep *ep)
+static noinline void fotg210_disable_dma(struct fotg210_ep *ep)
 {
 	iowrite32(DMATFNR_DISDMA, ep->fotg210->reg + FOTG210_DMATFNR);
 }
 
-static void fotg210_wait_dma_done(struct fotg210_ep *ep)
+static noinline void fotg210_wait_dma_done(struct fotg210_ep *ep)
 {
 	u32 value;
 
@@ -312,7 +313,8 @@ static void fotg210_wait_dma_done(struct fotg210_ep *ep)
 			goto dma_reset;
 	} while (!(value & DISGR2_DMA_CMPLT));
 
-	fotg210_ack_int(ep->fotg210, FOTG210_DISGR2, DISGR2_DMA_CMPLT);
+	value &= ~DISGR2_DMA_CMPLT;
+	iowrite32(value, ep->fotg210->reg + FOTG210_DISGR2);
 	return;
 
 dma_reset:
@@ -334,7 +336,7 @@ dma_reset:
 	}
 }
 
-static void fotg210_start_dma(struct fotg210_ep *ep,
+static noinline void fotg210_start_dma(struct fotg210_ep *ep,
 			struct fotg210_request *req)
 {
 	struct device *dev = &ep->fotg210->gadget.dev;
@@ -348,6 +350,7 @@ static void fotg210_start_dma(struct fotg210_ep *ep,
 			length = req->req.length;
 		} else {
 			buffer = req->req.buf + req->req.actual;
+			//length = req->req.length;
 			length = ioread32(ep->fotg210->reg +
 					FOTG210_FIBCR(ep->epnum - 1)) & FIBCR_BCFX;
 			if (length > req->req.length - req->req.actual)
@@ -360,6 +363,19 @@ static void fotg210_start_dma(struct fotg210_ep *ep,
 		else
 			length = req->req.length - req->req.actual;
 	}
+
+	// pr_info("fotg210 fotg210_start_dma: ep: %d, req.length: %d, actual: %d, buffer: %x, length, %d, FOTG210_DMATFNR: %x, FOTG210_DMACPSR1: %x, FOTG210_DCFESR: %x, FOTG210_FIBCR(%d): %x\n",
+	// ep->epnum, 
+	// req->req.length, 
+	// req->req.actual, 
+	// buffer, 
+	// length, 
+	// ioread32(ep->fotg210->reg + FOTG210_DMATFNR),
+	// ioread32(ep->fotg210->reg + FOTG210_DMACPSR1),
+	// ioread32(ep->fotg210->reg + FOTG210_DCFESR),
+	// ep->epnum - 1,
+	// ioread32(ep->fotg210->reg + FOTG210_FIBCR(ep->epnum - 1))
+	// );
 
 	d = dma_map_single(dev, buffer, length,
 			ep->dir_in ? DMA_TO_DEVICE : DMA_FROM_DEVICE);
@@ -379,10 +395,10 @@ static void fotg210_start_dma(struct fotg210_ep *ep,
 	/* update actual transfer length */
 	req->req.actual += length;
 
-	dma_unmap_single(dev, d, length, DMA_TO_DEVICE);
+	dma_unmap_single(dev, d, length, ep->dir_in ? DMA_TO_DEVICE : DMA_FROM_DEVICE);
 }
 
-static void fotg210_ep0_queue(struct fotg210_ep *ep,
+static noinline void fotg210_ep0_queue(struct fotg210_ep *ep,
 				struct fotg210_request *req)
 {
 	if (!req->req.length) {
@@ -396,12 +412,12 @@ static void fotg210_ep0_queue(struct fotg210_ep *ep,
 	} else { /* OUT */
 		u32 value = ioread32(ep->fotg210->reg + FOTG210_DMISGR0);
 
-		value &= ~DMISGR0_MCX_OUT_INT;
+		//value &= ~DMISGR0_MCX_OUT_INT;
 		iowrite32(value, ep->fotg210->reg + FOTG210_DMISGR0);
 	}
 }
 
-static int fotg210_ep_queue(struct usb_ep *_ep, struct usb_request *_req,
+static noinline int fotg210_ep_queue(struct usb_ep *_ep, struct usb_request *_req,
 				gfp_t gfp_flags)
 {
 	struct fotg210_ep *ep;
@@ -435,7 +451,7 @@ static int fotg210_ep_queue(struct usb_ep *_ep, struct usb_request *_req,
 	return 0;
 }
 
-static int fotg210_ep_dequeue(struct usb_ep *_ep, struct usb_request *_req)
+static noinline int fotg210_ep_dequeue(struct usb_ep *_ep, struct usb_request *_req)
 {
 	struct fotg210_ep *ep;
 	struct fotg210_request *req;
@@ -452,7 +468,7 @@ static int fotg210_ep_dequeue(struct usb_ep *_ep, struct usb_request *_req)
 	return 0;
 }
 
-static void fotg210_set_epnstall(struct fotg210_ep *ep)
+static noinline void fotg210_set_epnstall(struct fotg210_ep *ep)
 {
 	struct fotg210_udc *fotg210 = ep->fotg210;
 	u32 value;
@@ -473,7 +489,7 @@ static void fotg210_set_epnstall(struct fotg210_ep *ep)
 	iowrite32(value, reg);
 }
 
-static void fotg210_clear_epnstall(struct fotg210_ep *ep)
+static noinline void fotg210_clear_epnstall(struct fotg210_ep *ep)
 {
 	struct fotg210_udc *fotg210 = ep->fotg210;
 	u32 value;
@@ -487,7 +503,7 @@ static void fotg210_clear_epnstall(struct fotg210_ep *ep)
 	iowrite32(value, reg);
 }
 
-static int fotg210_set_halt_and_wedge(struct usb_ep *_ep, int value, int wedge)
+static noinline int fotg210_set_halt_and_wedge(struct usb_ep *_ep, int value, int wedge)
 {
 	struct fotg210_ep *ep;
 	struct fotg210_udc *fotg210;
@@ -517,17 +533,17 @@ static int fotg210_set_halt_and_wedge(struct usb_ep *_ep, int value, int wedge)
 	return 0;
 }
 
-static int fotg210_ep_set_halt(struct usb_ep *_ep, int value)
+static noinline int fotg210_ep_set_halt(struct usb_ep *_ep, int value)
 {
 	return fotg210_set_halt_and_wedge(_ep, value, 0);
 }
 
-static int fotg210_ep_set_wedge(struct usb_ep *_ep)
+static noinline int fotg210_ep_set_wedge(struct usb_ep *_ep)
 {
 	return fotg210_set_halt_and_wedge(_ep, 1, 1);
 }
 
-static void fotg210_ep_fifo_flush(struct usb_ep *_ep)
+static noinline void fotg210_ep_fifo_flush(struct usb_ep *_ep)
 {
 }
 
@@ -546,26 +562,26 @@ static const struct usb_ep_ops fotg210_ep_ops = {
 	.set_wedge	= fotg210_ep_set_wedge,
 };
 
-static void fotg210_clear_tx0byte(struct fotg210_udc *fotg210)
+static noinline void fotg210_clear_tx0byte(struct fotg210_udc *fotg210)
 {
 	u32 value = ioread32(fotg210->reg + FOTG210_TX0BYTE);
 
-	value &= ~(TX0BYTE_EP1 | TX0BYTE_EP2 | TX0BYTE_EP3
-		   | TX0BYTE_EP4);
+	// value &= ~(TX0BYTE_EP1 | TX0BYTE_EP2 | TX0BYTE_EP3
+	// 	   | TX0BYTE_EP4);
 	iowrite32(value, fotg210->reg + FOTG210_TX0BYTE);
 }
 
-static void fotg210_clear_rx0byte(struct fotg210_udc *fotg210)
+static noinline void fotg210_clear_rx0byte(struct fotg210_udc *fotg210)
 {
 	u32 value = ioread32(fotg210->reg + FOTG210_RX0BYTE);
 
-	value &= ~(RX0BYTE_EP1 | RX0BYTE_EP2 | RX0BYTE_EP3
-		   | RX0BYTE_EP4);
+	// value &= ~(RX0BYTE_EP1 | RX0BYTE_EP2 | RX0BYTE_EP3
+	// 	   | RX0BYTE_EP4);
 	iowrite32(value, fotg210->reg + FOTG210_RX0BYTE);
 }
 
 /* read 8-byte setup packet only */
-static void fotg210_rdsetupp(struct fotg210_udc *fotg210,
+static noinline void fotg210_rdsetupp(struct fotg210_udc *fotg210,
 		   u8 *buffer)
 {
 	int i = 0;
@@ -607,7 +623,7 @@ static void fotg210_rdsetupp(struct fotg210_udc *fotg210,
 	iowrite32(DMATFNR_DISDMA, fotg210->reg + FOTG210_DMATFNR);
 }
 
-static void fotg210_set_configuration(struct fotg210_udc *fotg210)
+static noinline void fotg210_set_configuration(struct fotg210_udc *fotg210)
 {
 	u32 value = ioread32(fotg210->reg + FOTG210_DAR);
 
@@ -615,7 +631,7 @@ static void fotg210_set_configuration(struct fotg210_udc *fotg210)
 	iowrite32(value, fotg210->reg + FOTG210_DAR);
 }
 
-static void fotg210_set_dev_addr(struct fotg210_udc *fotg210, u32 addr)
+static noinline void fotg210_set_dev_addr(struct fotg210_udc *fotg210, u32 addr)
 {
 	u32 value = ioread32(fotg210->reg + FOTG210_DAR);
 
@@ -623,7 +639,7 @@ static void fotg210_set_dev_addr(struct fotg210_udc *fotg210, u32 addr)
 	iowrite32(value, fotg210->reg + FOTG210_DAR);
 }
 
-static void fotg210_set_cxstall(struct fotg210_udc *fotg210)
+static noinline void fotg210_set_cxstall(struct fotg210_udc *fotg210)
 {
 	u32 value = ioread32(fotg210->reg + FOTG210_DCFESR);
 
@@ -631,13 +647,13 @@ static void fotg210_set_cxstall(struct fotg210_udc *fotg210)
 	iowrite32(value, fotg210->reg + FOTG210_DCFESR);
 }
 
-static void fotg210_request_error(struct fotg210_udc *fotg210)
+static noinline void fotg210_request_error(struct fotg210_udc *fotg210)
 {
 	fotg210_set_cxstall(fotg210);
 	pr_err("request error!!\n");
 }
 
-static void fotg210_set_address(struct fotg210_udc *fotg210,
+static noinline void fotg210_set_address(struct fotg210_udc *fotg210,
 				struct usb_ctrlrequest *ctrl)
 {
 	if (le16_to_cpu(ctrl->wValue) >= 0x0100) {
@@ -648,7 +664,7 @@ static void fotg210_set_address(struct fotg210_udc *fotg210,
 	}
 }
 
-static void fotg210_set_feature(struct fotg210_udc *fotg210,
+static noinline void fotg210_set_feature(struct fotg210_udc *fotg210,
 				struct usb_ctrlrequest *ctrl)
 {
 	switch (ctrl->bRequestType & USB_RECIP_MASK) {
@@ -674,7 +690,7 @@ static void fotg210_set_feature(struct fotg210_udc *fotg210,
 	}
 }
 
-static void fotg210_clear_feature(struct fotg210_udc *fotg210,
+static noinline void fotg210_clear_feature(struct fotg210_udc *fotg210,
 				struct usb_ctrlrequest *ctrl)
 {
 	struct fotg210_ep *ep =
@@ -704,7 +720,7 @@ static void fotg210_clear_feature(struct fotg210_udc *fotg210,
 	}
 }
 
-static int fotg210_is_epnstall(struct fotg210_ep *ep)
+static noinline int fotg210_is_epnstall(struct fotg210_ep *ep)
 {
 	struct fotg210_udc *fotg210 = ep->fotg210;
 	u32 value;
@@ -731,7 +747,7 @@ static void fotg210_ep0_complete(struct usb_ep *_ep, struct usb_request *req)
 	}
 }
 
-static void fotg210_get_status(struct fotg210_udc *fotg210,
+static noinline void fotg210_get_status(struct fotg210_udc *fotg210,
 				struct usb_ctrlrequest *ctrl)
 {
 	u8 epnum;
@@ -766,7 +782,7 @@ static void fotg210_get_status(struct fotg210_udc *fotg210,
 	spin_lock(&fotg210->lock);
 }
 
-static int fotg210_setup_packet(struct fotg210_udc *fotg210,
+static noinline int fotg210_setup_packet(struct fotg210_udc *fotg210,
 				struct usb_ctrlrequest *ctrl)
 {
 	u8 *p = (u8 *)ctrl;
@@ -780,6 +796,8 @@ static int fotg210_setup_packet(struct fotg210_udc *fotg210,
 		u32 value = ioread32(fotg210->reg + FOTG210_DMCR);
 		fotg210->gadget.speed = value & DMCR_HS_EN ?
 				USB_SPEED_HIGH : USB_SPEED_FULL;
+		/* SOF mask timer = 1100 ticks for HS*/
+		iowrite32(SOFMTR_TMR(1100), fotg210->reg + FOTG210_SOFMTR);
 	}
 
 	/* check request */
@@ -812,7 +830,7 @@ static int fotg210_setup_packet(struct fotg210_udc *fotg210,
 	return ret;
 }
 
-static void fotg210_ep0out(struct fotg210_udc *fotg210)
+static noinline void fotg210_ep0out(struct fotg210_udc *fotg210)
 {
 	struct fotg210_ep *ep = fotg210->ep[0];
 
@@ -832,7 +850,7 @@ static void fotg210_ep0out(struct fotg210_udc *fotg210)
 	}
 }
 
-static void fotg210_ep0in(struct fotg210_udc *fotg210)
+static noinline void fotg210_ep0in(struct fotg210_udc *fotg210)
 {
 	struct fotg210_ep *ep = fotg210->ep[0];
 
@@ -852,7 +870,7 @@ static void fotg210_ep0in(struct fotg210_udc *fotg210)
 	}
 }
 
-static void fotg210_in_fifo_handler(struct fotg210_ep *ep)
+static noinline void fotg210_in_fifo_handler(struct fotg210_ep *ep)
 {
 	struct fotg210_request *req = list_entry(ep->queue.next,
 					struct fotg210_request, queue);
@@ -862,12 +880,11 @@ static void fotg210_in_fifo_handler(struct fotg210_ep *ep)
 	fotg210_done(ep, req, 0);
 }
 
-static void fotg210_out_fifo_handler(struct fotg210_ep *ep)
+static noinline void fotg210_out_fifo_handler(struct fotg210_ep *ep)
 {
 	struct fotg210_request *req = list_entry(ep->queue.next,
 						 struct fotg210_request, queue);
 	int disgr1 = ioread32(ep->fotg210->reg + FOTG210_DISGR1);
-
 	fotg210_start_dma(ep, req);
 
 	/* Complete the request when it's full or a short packet arrived.
@@ -931,7 +948,7 @@ static irqreturn_t fotg210_irq(int irq, void *_fotg210)
 		if (int_grp2 & DISGR2_DMA_ERROR) {
 			fotg210_ack_int(fotg210, FOTG210_DISGR2, DISGR2_DMA_ERROR);
 		}
-	}
+	}	
 
 	if (int_grp & DIGR_INT_G0) {
 		void __iomem *reg = fotg210->reg + FOTG210_DISGR0;
@@ -994,7 +1011,7 @@ static irqreturn_t fotg210_irq(int irq, void *_fotg210)
 	return IRQ_HANDLED;
 }
 
-static void fotg210_disable_unplug(struct fotg210_udc *fotg210)
+static noinline void fotg210_disable_unplug(struct fotg210_udc *fotg210)
 {
 	u32 reg = ioread32(fotg210->reg + FOTG210_PHYTMSR);
 
@@ -1002,7 +1019,7 @@ static void fotg210_disable_unplug(struct fotg210_udc *fotg210)
 	iowrite32(reg, fotg210->reg + FOTG210_PHYTMSR);
 }
 
-static int fotg210_udc_start(struct usb_gadget *g,
+static noinline int fotg210_udc_start(struct usb_gadget *g,
 		struct usb_gadget_driver *driver)
 {
 	struct fotg210_udc *fotg210 = gadget_to_fotg210(g);
@@ -1028,6 +1045,12 @@ static int fotg210_udc_start(struct usb_gadget *g,
 	value |= DMCR_CHIP_EN;
 	iowrite32(value, fotg210->reg + FOTG210_DMCR);
 
+	/* chip enable */
+	value = ioread32(fotg210->reg + FOTG210_DMCR);
+	value |= DMCR_CHIP_EN;
+	iowrite32(value, fotg210->reg + FOTG210_DMCR);
+
+	//fotg210_disable_unplug(fotg210);
 	/* enable device global interrupt */
 	value = ioread32(fotg210->reg + FOTG210_DMCR);
 	value |= DMCR_GLINT_EN;
@@ -1036,12 +1059,21 @@ static int fotg210_udc_start(struct usb_gadget *g,
 	return 0;
 }
 
-static void fotg210_init(struct fotg210_udc *fotg210)
+static noinline void fotg210_init(struct fotg210_udc *fotg210)
 {
-	u32 value;
+	u32 value, i;
+
+	/* udc enable */
+	iowrite32(DMCR_CHIP_EN, fotg210->reg + FOTG210_DMCR);
+
+	/* device address reset */
+	iowrite32(0, fotg210->reg + FOTG210_DAR);
+
+	/* set idle counter to 7ms */
+	iowrite32(7, fotg210->reg + FOTG210_DICR);
 
 	/* disable global interrupt and set int polarity to active high */
-	iowrite32(GMIR_MHC_INT | GMIR_MOTG_INT | GMIR_INT_POLARITY,
+	iowrite32(GMIR_MHC_INT | GMIR_MOTG_INT,
 		  fotg210->reg + FOTG210_GMIR);
 
 	/* mask interrupts for groups other than 0-2 */
@@ -1058,22 +1090,70 @@ static void fotg210_init(struct fotg210_udc *fotg210)
 	value &= ~DMCR_GLINT_EN;
 	iowrite32(value, fotg210->reg + FOTG210_DMCR);
 
+	/* disable all fifo interrupt */
+	iowrite32(~(u32)0, fotg210->reg + FOTG210_DMISGR1);
+
+	/* disable cmd end */
+	/* mask CX_OUT_INT until ep0_queue() */
+	value = ioread32(fotg210->reg + FOTG210_DMISGR0);
+	value |= DMISGR0_MCX_COMEND;
+	value |= DMISGR0_MCX_OUT_INT;
+	iowrite32(value, fotg210->reg + FOTG210_DMISGR0);
+
+	/* clear interrupts */
+	iowrite32(~0, fotg210->reg + FOTG210_DIGR);
+	iowrite32(~0, fotg210->reg + FOTG210_DISGR0);
+	iowrite32(~0, fotg210->reg + FOTG210_DISGR1);
+	iowrite32(~0, fotg210->reg + FOTG210_DISGR2);
+
+	/* udc reset */
+	value = ioread32(fotg210->reg + FOTG210_DMCR);
+	value |= DMCR_SFRST;
+	iowrite32(value, fotg210->reg + FOTG210_DMCR);
+	
+	mdelay(10);
+	if (ioread32(fotg210->reg + FOTG210_DMCR) & DMCR_SFRST) {
+		pr_err("fotg210: udc reset failed\n");
+	}
+
+	/* CX FIFO reset */
+	value = ioread32(fotg210->reg + FOTG210_DCFESR);
+	value |= DCFESR_CX_CLR;
+	iowrite32(value, fotg210->reg + FOTG210_DCFESR);
+	
+	mdelay(10);
+	if (ioread32(fotg210->reg + FOTG210_DCFESR) & DCFESR_CX_CLR) {
+		pr_err("fotg210: ep0 fifo reset failed\n");
+	}
+
+	/* FIFO reset */
+	for (i = 0; i < 4; ++i) {
+		value = ioread32(fotg210->reg + FOTG210_FIBCR(i));
+		value |= FIBCR_FFRST;
+		iowrite32(value, fotg210->reg + FOTG210_FIBCR(i));
+
+		mdelay(10);
+		if (ioread32(fotg210->reg + FOTG210_FIBCR(i)) & FIBCR_FFRST) {
+			pr_err("fotg210: fifo%d reset failed\n", i);
+		}
+	}
+
+	/* set default value */
+	iowrite32(0x33221100, fotg210->reg + FOTG210_EPMAP);
+	iowrite32(0x0, fotg210->reg + FOTG210_EPMAP2);
+	iowrite32(0x04030201, fotg210->reg + FOTG210_FIFOMAP);
+	
 	/* enable only grp2 irqs we handle */
 	iowrite32(~(DISGR2_DMA_ERROR | DISGR2_RX0BYTE_INT | DISGR2_TX0BYTE_INT
 		    | DISGR2_ISO_SEQ_ABORT_INT | DISGR2_ISO_SEQ_ERR_INT
 		    | DISGR2_RESM_INT | DISGR2_SUSP_INT | DISGR2_USBRST_INT),
 		  fotg210->reg + FOTG210_DMISGR2);
 
-	/* disable all fifo interrupt */
-	iowrite32(~(u32)0, fotg210->reg + FOTG210_DMISGR1);
-
-	/* disable cmd end */
-	value = ioread32(fotg210->reg + FOTG210_DMISGR0);
-	value |= DMISGR0_MCX_COMEND;
-	iowrite32(value, fotg210->reg + FOTG210_DMISGR0);
+	/* set idle counter to 7ms */
+	iowrite32(7, fotg210->reg + FOTG210_DICR);
 }
 
-static int fotg210_udc_stop(struct usb_gadget *g)
+static noinline int fotg210_udc_stop(struct usb_gadget *g)
 {
 	struct fotg210_udc *fotg210 = gadget_to_fotg210(g);
 	unsigned long	flags;
@@ -1109,6 +1189,7 @@ static int fotg210_vbus_session(struct usb_gadget *g, int is_active)
 }
 
 static const struct usb_gadget_ops fotg210_gadget_ops = {
+	.pullup			= fotg210_udc_pullup,
 	.udc_start		= fotg210_udc_start,
 	.udc_stop		= fotg210_udc_stop,
 	.vbus_session		= fotg210_vbus_session,
@@ -1124,7 +1205,7 @@ static const struct usb_gadget_ops fotg210_gadget_ops = {
  *
  * Returns NOTIFY_OK or NOTIFY_DONE
  */
-static int fotg210_phy_event(struct notifier_block *nb, unsigned long action,
+static noinline int fotg210_phy_event(struct notifier_block *nb, unsigned long action,
 			     void *data)
 {
 	struct usb_gadget *gadget = data;
@@ -1264,8 +1345,6 @@ int fotg210_udc_probe(struct platform_device *pdev, struct fotg210 *fotg)
 	fotg210->ep0_req->complete = fotg210_ep0_complete;
 
 	fotg210_init(fotg210);
-
-	fotg210_disable_unplug(fotg210);
 
 	ret = request_irq(irq, fotg210_irq, IRQF_SHARED,
 			  udc_name, fotg210);
