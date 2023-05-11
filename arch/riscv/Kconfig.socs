@@ -3,6 +3,7 @@ menu "SoC selection"
 config SOC_BOUFFALOLAB
 	bool "Bouffalolab SoCs"
 	select SIFIVE_PLIC
+	select BFLB_M0_INTC
 	help
 	  This enables support for Bouffalolab SoC platforms.
 
