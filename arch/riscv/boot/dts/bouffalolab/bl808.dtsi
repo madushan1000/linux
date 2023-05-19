@@ -59,6 +59,13 @@
 		#clock-cells = <0>;
 	};
 
+	uart: uart-clk {
+		compatible = "fixed-clock";
+		clock-frequency = <160000000>;
+		clock-output-names = "uart";
+		#clock-cells = <0>;
+	};
+
 	soc {
 		compatible = "simple-bus";
 		ranges;
@@ -82,8 +89,7 @@
 
 			interrupt-controller;
 			#interrupt-cells = <2>;
-			interrupts-extended = <&ipclic BFLB_IPC_SOURCE_M0
-					BFLB_IPC_DEVICE_GPIO IRQ_TYPE_EDGE_RISING>;
+			interrupts-extended = <&m0ic 44>;
 
 			sdh_pins: sdh-pins {
 				pins = "GPIO0", "GPIO1", "GPIO2", "GPIO3", "GPIO4", "GPIO5";
@@ -101,28 +107,22 @@
 			compatible = "bflb,bl808-uart";
 			reg = <0x30002000 0x1000>;
 			interrupts = <20 IRQ_TYPE_LEVEL_HIGH>;
-			clocks = <&xtal>;
+			clocks = <&uart>;
 			status = "disabled";
 		};
 		
 		uart1: serial@0x2000AA00 {
 			compatible = "bflb,bl808-uart";
 			reg = <0x2000AA00 0x0100>;
-			interrupts-extended = <&ipclic BFLB_IPC_SOURCE_M0
-								BFLB_IPC_DEVICE_UART2
-								IRQ_TYPE_EDGE_RISING>;
-			mboxes = <&ipclic BFLB_IPC_SOURCE_M0 BFLB_IPC_DEVICE_UART2>;
-			clocks = <&xtal>;
+			interrupts-extended = <&m0ic 30>;
+			clocks = <&uart>;
 			status = "disabled";
 		};
 		
 		sdhci0: sdhci@20060000 {
 			compatible = "bflb,bl808-sdhci";
 			reg = <0x20060000 0x100>;
-			interrupts-extended = <&ipclic BFLB_IPC_SOURCE_M0
-			                               BFLB_IPC_DEVICE_SDHCI
-			                               IRQ_TYPE_EDGE_RISING>;
-			mboxes = <&ipclic BFLB_IPC_SOURCE_M0 BFLB_IPC_DEVICE_SDHCI>;
+			interrupts-extended = <&m0ic 17>;
 			clocks = <&sdh>;
 			status = "disabled";
 		};
@@ -136,9 +136,7 @@
 		usb: usb@20072000 {
 			compatible = "faraday,fotg210";
 			reg = <0x20072000 0x1000>;
-			interrupts-extended = <&ipclic BFLB_IPC_SOURCE_M0
-                                           BFLB_IPC_DEVICE_USB
-                                           RQ_TYPE_EDGE_RISING>;
+			interrupts-extended = <&m0ic 21>;
 			clocks = <&xtal>;
 			/*clocks = <&glb_clk CLK_BUS_USB>;*/
 			usb-phy = <&usb_phy>;
@@ -167,8 +165,26 @@
 			interrupt-controller;
 			#address-cells = <0>;
 			#interrupt-cells = <2>;
-			riscv,ndev = <64>;
+			riscv,ndev = <82>;
 		};
+
+		m0ic: mcu-interrupt-controller@20000050 {
+			compatible = "bflb,bl808-mcu-irq";
+			reg = <0x20000050 0x18>;
+			interrupts = <81 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-controller;
+			#address-cells = <0>;
+			#interrupt-cells = <1>;
+		};
+
+		/*lpic: lp-interrupt-controller@20000068 {
+			compatible = "bflb,lpic";
+			reg = <0x20000068 0x10>;
+			interrupts = <xx IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-controller;
+			#address-cells = <0>;
+			#interrupt-cells = <1>;
+		};*/
 
 		clint: timer@e4000000 {
 			compatible = "thead,c900-clint";

@@ -73,10 +73,7 @@
 	status = "okay";
 };
 
-&ehci0 {
-	status = "okay";
-};
-
-&enet0 {
+&usb {
+	dr_mode= "peripheral";
 	status = "okay";
 };
