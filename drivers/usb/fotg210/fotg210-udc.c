@@ -33,7 +33,7 @@ static void fotg210_ack_int(struct fotg210_udc *fotg210, u32 offset, u32 mask)
 {
 	u32 value = ioread32(fotg210->reg + offset);
 
-	value &= ~mask;
+	value = mask;
 	iowrite32(value, fotg210->reg + offset);
 }
 
@@ -313,8 +313,7 @@ static noinline void fotg210_wait_dma_done(struct fotg210_ep *ep)
 			goto dma_reset;
 	} while (!(value & DISGR2_DMA_CMPLT));
 
-	value &= ~DISGR2_DMA_CMPLT;
-	iowrite32(value, ep->fotg210->reg + FOTG210_DISGR2);
+	fotg210_ack_int(ep->fotg210, FOTG210_DISGR2, DISGR2_DMA_CMPLT);
 	return;
 
 dma_reset:
@@ -916,9 +915,7 @@ static irqreturn_t fotg210_irq(int irq, void *_fotg210)
 		if (int_grp2 & DISGR2_USBRST_INT) {
 			usb_gadget_udc_reset(&fotg210->gadget,
 					     fotg210->driver);
-			value = ioread32(reg);
-			//value &= ~DISGR2_USBRST_INT;
-			iowrite32(value, reg);
+			fotg210_ack_int(fotg210, FOTG210_DISGR2, DISGR2_USBRST_INT);
 			iowrite32(0x0, fotg210->reg + FOTG210_FIFOCF);
 			pr_info("fotg210 udc reset\n");
 		}
@@ -1191,19 +1188,15 @@ static int fotg210_vbus_session(struct usb_gadget *g, int is_active)
 	return 0;
 }
 
-/**
- * fotg210_vbus_session - Called by external transceiver to enable/disable udc
- * @_gadget: usb gadget
- * @is_active: 0 if should disable UDC VBUS, 1 if should enable
- *
- * Returns 0
- */
-static int fotg210_vbus_session(struct usb_gadget *g, int is_active)
+static noinline int fotg210_udc_pullup(struct usb_gadget *g, int is_on)
 {
 	struct fotg210_udc *fotg210 = gadget_to_fotg210(g);
-
-	/* Call down to core integration layer to drive or disable VBUS */
-	fotg210_vbus(fotg210->fotg, is_active);
+	u32 reg = ioread32(fotg210->reg + FOTG210_PHYTMSR);
+	if(is_on)
+		reg &= ~PHYTMSR_UNPLUG;
+	else
+		reg |= PHYTMSR_UNPLUG;
+	iowrite32(reg, fotg210->reg + FOTG210_PHYTMSR);
 	return 0;
 }
 
@@ -1211,7 +1204,6 @@ static const struct usb_gadget_ops fotg210_gadget_ops = {
 	.pullup			= fotg210_udc_pullup,
 	.udc_start		= fotg210_udc_start,
 	.udc_stop		= fotg210_udc_stop,
-	.vbus_session		= fotg210_vbus_session,
 	.vbus_session		= fotg210_vbus_session,
 };
 
